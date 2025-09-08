@@ -9,7 +9,8 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000', // Development
-      'https://avrek-calls-front.onrender.com', // Production frontend
+      'https://avrek-calls-front.onrender.com', // Production frontend (Render)
+      'https://avrek-calls-front-production.up.railway.app', // Production frontend (Railway)
       process.env.FRONTEND_URL || 'http://localhost:3000'
     ],
     credentials: true,

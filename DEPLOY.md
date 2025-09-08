@@ -12,7 +12,7 @@ BLAND_AI_API_KEY=sk-your-actual-api-key
 JWT_SECRET=your-super-secret-jwt-key
 NODE_ENV=production
 PORT=3001
-FRONTEND_URL=https://avrek-calls-front.onrender.com
+FRONTEND_URL=https://avrek-calls-front-production.up.railway.app
 BASE_URL=https://avrek-calls.onrender.com
 ```
 
@@ -34,7 +34,7 @@ BASE_URL=https://avrek-calls.onrender.com
 BLAND_AI_API_KEY=sk-your-actual-api-key
 JWT_SECRET=your-super-secret-jwt-key
 NODE_ENV=production
-FRONTEND_URL=https://avrek-calls-front.onrender.com
+FRONTEND_URL=https://avrek-calls-front-production.up.railway.app
 BASE_URL=https://avrek-calls.onrender.com
 ```
 
