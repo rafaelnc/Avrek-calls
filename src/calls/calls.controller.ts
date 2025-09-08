@@ -28,6 +28,15 @@ export class CallsController {
     return this.callsService.findAll();
   }
 
+  @Get('health')
+  healthCheck() {
+    return { 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      service: 'avrek-calls-backend'
+    };
+  }
+
   @Post('clear')
   clearAll() {
     return this.callsService.clearAll();

@@ -12,9 +12,9 @@ import { Call } from './calls/entities/call.entity';
     }),
     TypeOrmModule.forRoot({
       type: 'sqlite',
-      database: 'avrek-calls.db',
+      database: process.env.DATABASE_URL || 'avrek-calls.db',
       entities: [Call],
-      synchronize: true, // Only for development
+      synchronize: process.env.NODE_ENV !== 'production', // Only for development
     }),
     AuthModule,
     CallsModule,
