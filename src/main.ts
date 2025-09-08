@@ -7,7 +7,11 @@ async function bootstrap() {
   
   // Enable CORS for frontend communication
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: [
+      'http://localhost:3000', // Development
+      'https://avrek-calls-front.onrender.com', // Production frontend
+      process.env.FRONTEND_URL || 'http://localhost:3000'
+    ],
     credentials: true,
   });
   
