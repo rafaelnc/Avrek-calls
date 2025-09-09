@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  console.log('🚀 Starting application...');
   const app = await NestFactory.create(AppModule);
   
   // Enable CORS for frontend communication

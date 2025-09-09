@@ -14,7 +14,8 @@ import { Call } from './calls/entities/call.entity';
       type: 'sqlite',
       database: process.env.DATABASE_URL || 'avrek-calls.db',
       entities: [Call],
-      synchronize: process.env.NODE_ENV !== 'production', // Only for development
+      synchronize: true, // Enable for now to create tables
+      logging: process.env.NODE_ENV !== 'production', // Log SQL queries in development
     }),
     AuthModule,
     CallsModule,

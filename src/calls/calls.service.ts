@@ -202,41 +202,62 @@ export class CallsService {
 
   async syncWithBlandAi(): Promise<{ message: string; syncedCount: number; createdCount: number; updatedCount: number }> {
     try {
+      console.log('🔄 ===== SYNC REQUEST STARTED =====');
       console.log('🔄 Starting sync with Bland.ai API...');
+      console.log('🔄 Timestamp:', new Date().toISOString());
       
       // Get all calls from Bland.ai API
+      console.log('📡 Making request to Bland.ai API to get all calls...');
       const blandCalls = await this.blandAiService.getAllCalls();
       console.log(`📞 Found ${blandCalls.length} calls in Bland.ai API`);
+      
+      if (blandCalls.length > 0) {
+        console.log('📋 First call sample:', JSON.stringify(blandCalls[0], null, 2));
+      }
 
       let syncedCount = 0;
       let createdCount = 0;
       let updatedCount = 0;
 
+      console.log('🔄 Starting to process each call...');
       for (const blandCall of blandCalls) {
         try {
+          console.log(`🔍 Processing call ID: ${blandCall.call_id}`);
+          
           // Check if call exists in local DB
           const existingCall = await this.callsRepository.findOne({
             where: { blandCallId: blandCall.call_id }
           });
 
           if (existingCall) {
+            console.log(`📝 Call ${blandCall.call_id} exists in DB, updating...`);
             // Update existing call
             const updated = await this.updateCallFromBlandData(existingCall, blandCall);
             if (updated) {
               updatedCount++;
+              console.log(`✅ Call ${blandCall.call_id} updated successfully`);
+            } else {
+              console.log(`⚠️ Call ${blandCall.call_id} was not updated (no changes)`);
             }
           } else {
+            console.log(`🆕 Call ${blandCall.call_id} not found in DB, creating new...`);
             // Create new call
             await this.createCallFromBlandData(blandCall);
             createdCount++;
+            console.log(`✅ Call ${blandCall.call_id} created successfully`);
           }
           syncedCount++;
         } catch (error) {
           console.error(`❌ Error syncing call ${blandCall.call_id}:`, error);
+          console.error(`❌ Call data:`, JSON.stringify(blandCall, null, 2));
         }
       }
 
-      console.log(`✅ Sync completed: ${syncedCount} synced, ${createdCount} created, ${updatedCount} updated`);
+      console.log(`✅ ===== SYNC COMPLETED =====`);
+      console.log(`✅ Total processed: ${syncedCount}`);
+      console.log(`✅ Created: ${createdCount}`);
+      console.log(`✅ Updated: ${updatedCount}`);
+      console.log(`✅ Timestamp: ${new Date().toISOString()}`);
       
       return {
         message: 'Sync completed successfully',
@@ -245,7 +266,12 @@ export class CallsService {
         updatedCount,
       };
     } catch (error) {
-      console.error('❌ Sync failed:', error);
+      console.error('❌ ===== SYNC FAILED =====');
+      console.error('❌ Sync failed with error:', error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
+      console.error('❌ Timestamp:', new Date().toISOString());
+      
       throw new HttpException(
         'Failed to sync with Bland.ai',
         HttpStatus.INTERNAL_SERVER_ERROR,

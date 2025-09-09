@@ -44,6 +44,11 @@ export class CallsController {
 
   @Post('sync')
   syncWithBlandAi() {
+    console.log('🎯 ===== SYNC ENDPOINT CALLED =====');
+    console.log('🎯 Endpoint: POST /calls/sync');
+    console.log('🎯 Timestamp:', new Date().toISOString());
+    console.log('🎯 Calling callsService.syncWithBlandAi()...');
+    
     return this.callsService.syncWithBlandAi();
   }
 
