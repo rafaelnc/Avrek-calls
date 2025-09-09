@@ -144,11 +144,18 @@ export class CallsService {
     issues?: string,
     transferredTo?: string,
   ): Promise<void> {
+    console.log('🔍 ===== UPDATE CALL STATUS STARTED =====');
+    console.log('🔍 Looking for call with Bland Call ID:', blandCallId);
+    console.log('🔍 Status to update:', status);
+    
     const call = await this.callsRepository.findOne({
       where: { blandCallId },
     });
 
     if (call) {
+      console.log('✅ Call found in database:', call.id);
+      console.log('✅ Current status:', call.status);
+      console.log('✅ Phone number:', call.phoneNumber);
       call.status = status;
       if (responses) {
         call.responsesCollected = responses;
@@ -166,6 +173,10 @@ export class CallsService {
         call.transferredTo = transferredTo;
       }
       await this.callsRepository.save(call);
+      console.log('✅ Call updated successfully in database');
+      console.log('✅ New status:', call.status);
+      console.log('✅ Duration:', call.callDuration);
+      console.log('✅ Recording URL:', call.recordingUrl);
 
       // If call is completed, generate and send PDF
       if (status === CallStatus.COMPLETED) {
@@ -175,6 +186,10 @@ export class CallsService {
         await this.generateAndSendPdf(call.id);
         console.log('📧 PDF generation and email sending completed for call:', call.id);
       }
+    } else {
+      console.log('❌ Call not found in database with Bland Call ID:', blandCallId);
+      console.log('❌ This might be a call that was not created through our system');
+      console.log('❌ Consider using sync to import this call');
     }
   }
 
