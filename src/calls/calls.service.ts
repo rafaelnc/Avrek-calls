@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Call, CallStatus } from './entities/call.entity';
 import { CreateCallDto } from './dto/create-call.dto';
-import { BlandAiService } from './bland-ai.service';
+import { BlandAiService, StartCallData } from './bland-ai.service';
 import { PdfService } from './pdf.service';
 import { EmailService } from './email.service';
 
@@ -60,6 +60,7 @@ export class CallsService {
         voicemail_action: createCallDto.voicemail_action,
         task: script,
         callId: savedCall.id.toString(),
+        webhook: "https://avrek-calls-production.up.railway.app/calls/webhook"
       });
 
       // Update call with Bland.ai call ID

@@ -1,6 +1,26 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import axios from 'axios';
 
+export interface StartCallData {
+  phone_number: string;
+  voice?: string;
+  wait_for_greeting?: boolean;
+  record?: boolean;
+  answered_by_enabled?: boolean;
+  noise_cancellation?: boolean;
+  interruption_threshold?: number;
+  block_interruptions?: boolean;
+  max_duration?: number;
+  model?: string;
+  language?: string;
+  background_track?: string;
+  endpoint?: string;
+  voicemail_action?: string;
+  task: string;
+  callId: string;
+  webhook?: string;
+}
+
 @Injectable()
 export class BlandAiService {
   private readonly apiKey = process.env.BLAND_AI_API_KEY || 'your-bland-ai-api-key';
@@ -12,24 +32,7 @@ export class BlandAiService {
     console.log('🌐 Base URL:', this.baseUrl);
   }
 
-  async startCall(callData: {
-    phone_number: string;
-    voice?: string;
-    wait_for_greeting?: boolean;
-    record?: boolean;
-    answered_by_enabled?: boolean;
-    noise_cancellation?: boolean;
-    interruption_threshold?: number;
-    block_interruptions?: boolean;
-    max_duration?: number;
-    model?: string;
-    language?: string;
-    background_track?: string;
-    endpoint?: string;
-    voicemail_action?: string;
-    task: string;
-    callId: string;
-  }): Promise<{ callId: string }> {
+  async startCall(callData: StartCallData): Promise<{ callId: string }> {
     const requestData = {
       phone_number: callData.phone_number,
       voice: callData.voice || 'June',
@@ -46,7 +49,7 @@ export class BlandAiService {
       endpoint: callData.endpoint || 'https://api.bland.ai',
       voicemail_action: callData.voicemail_action || 'hangup',
       task: callData.task,
-      webhook_url: `${process.env.BASE_URL || 'http://localhost:3001'}/calls/webhook`,
+      webhook_url: callData.webhook || `${process.env.BASE_URL || 'http://localhost:3001'}/calls/webhook`,
     };
 
     const requestHeaders = {
