@@ -40,16 +40,27 @@ export class PdfService {
     
     try {
       if (call.responsesCollected) {
-        const parsed = JSON.parse(call.responsesCollected);
-        if (Array.isArray(parsed)) {
-          responses = parsed;
-        } else if (typeof parsed === 'string') {
-          // If it's a concatenated transcript, treat as single response
-          responses = [{ question: 'Call Transcript', answer: parsed }];
+        // First, try to parse as JSON
+        try {
+          const parsed = JSON.parse(call.responsesCollected);
+          if (Array.isArray(parsed)) {
+            responses = parsed;
+          } else if (typeof parsed === 'string') {
+            // If it's a concatenated transcript, treat as single response
+            responses = [{ question: 'Call Transcript', answer: parsed }];
+          }
+        } catch (jsonError) {
+          // If JSON parsing fails, treat as concatenated transcript string
+          console.log('Not valid JSON, treating as concatenated transcript');
+          responses = [{ question: 'Call Transcript', answer: call.responsesCollected }];
         }
       }
     } catch (error) {
       console.log('Could not parse responsesCollected:', error);
+      // Fallback: treat as plain text
+      if (call.responsesCollected) {
+        responses = [{ question: 'Call Transcript', answer: call.responsesCollected }];
+      }
     }
 
     // Header

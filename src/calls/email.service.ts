@@ -20,8 +20,8 @@ export class EmailService {
       port: parseInt(process.env.SMTP_PORT || '587'),
       secure: false,
       auth: {
-        user: process.env.SMTP_USER || 'your-email@gmail.com',
-        pass: process.env.SMTP_PASS || 'your-app-password',
+        user: process.env.SMTP_USER || 'rafaelcastro@avanz.com.br',
+        pass: process.env.SMTP_PASS || 'rc@@2023@@avz',
       },
     });
     
@@ -37,8 +37,8 @@ export class EmailService {
       console.log('📧 Timestamp:', new Date().toISOString());
 
       const mailOptions = {
-        from: process.env.SMTP_FROM || 'noreply@avrek.com',
-        to: process.env.ADMIN_EMAIL || 'admin@avrek.com',
+        from: process.env.SMTP_FROM || 'rafaelcastro@avanz.com.br',
+        to: process.env.ADMIN_EMAIL || 'rafaelnunes.ti@gmail.com',
         subject: `Call Report - ${call.phoneNumber} - ${call.createdAt.toLocaleDateString()}`,
         html: `
           <h2>Call Report Generated</h2>

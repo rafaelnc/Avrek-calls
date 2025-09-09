@@ -13,6 +13,7 @@ import { CallsService } from './calls.service';
 import { CreateCallDto } from './dto/create-call.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Public } from '../auth/public.decorator';
+import { CallStatus } from './entities/call.entity';
 
 @Controller('calls')
 @UseGuards(JwtAuthGuard)
@@ -128,11 +129,11 @@ export class CallsController {
     
     // Determine status based on multiple fields
     if (completed === true || status === 'completed' || queue_status === 'complete') {
-      callStatus = 'Completed';
+      callStatus = CallStatus.COMPLETED;
     } else if (status === 'no-answer' || answered_by === 'no-answer') {
-      callStatus = 'Not Answered';
+      callStatus = CallStatus.NOT_ANSWERED;
     } else {
-      callStatus = 'In Progress';
+      callStatus = CallStatus.IN_PROGRESS;
     }
 
     console.log('🔄 Mapped Status:', callStatus);
@@ -143,7 +144,7 @@ export class CallsController {
       // Process webhook in background to avoid blocking the response
       this.processWebhookInBackground(
         call_id,
-        callStatus as any,
+        callStatus,
         concatenated_transcript || (transcripts ? JSON.stringify(transcripts) : undefined),
         call_length,
         recording_url,
@@ -168,7 +169,7 @@ export class CallsController {
 
   private async processWebhookInBackground(
     call_id: string,
-    status: any,
+    status: CallStatus,
     responses?: string,
     duration?: number,
     recording_url?: string,
