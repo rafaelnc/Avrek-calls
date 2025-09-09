@@ -50,7 +50,7 @@ export class BlandAiService {
       voicemail_action: callData.voicemail_action || 'hangup',
       task: callData.task,
       webhook: callData.webhook || `${process.env.BASE_URL || 'http://localhost:3001'}/calls/webhook`,
-      webhook_events: ['call', 'error'],
+      webhook_events: ['webhook', 'error'],
     };
 
     const requestHeaders = {

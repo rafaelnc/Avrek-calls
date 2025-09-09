@@ -8,12 +8,16 @@ export class EmailService {
 
   constructor() {
     // Configure email transporter
+    console.log('📧 ===== EMAIL SERVICE INITIALIZATION =====');
     console.log('📧 EmailService - Initializing SMTP configuration...');
+    console.log('📧 NODE_ENV:', process.env.NODE_ENV || 'NOT SET');
     console.log('📧 SMTP_HOST:', process.env.SMTP_HOST || 'NOT SET');
     console.log('📧 SMTP_PORT:', process.env.SMTP_PORT || 'NOT SET');
     console.log('📧 SMTP_USER:', process.env.SMTP_USER || 'NOT SET');
+    console.log('📧 SMTP_PASS:', process.env.SMTP_PASS ? '***SET***' : 'NOT SET');
     console.log('📧 SMTP_FROM:', process.env.SMTP_FROM || 'NOT SET');
     console.log('📧 ADMIN_EMAIL:', process.env.ADMIN_EMAIL || 'NOT SET');
+    console.log('📧 All env vars:', Object.keys(process.env).filter(key => key.startsWith('SMTP')));
     
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'mail.avanz.com.br',
@@ -27,6 +31,9 @@ export class EmailService {
       connectionTimeout: 60000, // 60 seconds
       greetingTimeout: 30000,   // 30 seconds
       socketTimeout: 60000,     // 60 seconds
+      // Add debug info for troubleshooting
+      debug: true,
+      logger: true,
     });
     
     console.log('📧 EmailService - SMTP transporter created successfully');
