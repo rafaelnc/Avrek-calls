@@ -34,9 +34,23 @@ export class PdfService {
   }
 
   private generatePdfContent(doc: PDFDocument, call: Call): void {
-    const responses = call.responsesCollected 
-      ? JSON.parse(call.responsesCollected) 
-      : [];
+    // Try to parse responses/transcripts from webhook data
+    let responses = [];
+    let transcripts = [];
+    
+    try {
+      if (call.responsesCollected) {
+        const parsed = JSON.parse(call.responsesCollected);
+        if (Array.isArray(parsed)) {
+          responses = parsed;
+        } else if (typeof parsed === 'string') {
+          // If it's a concatenated transcript, treat as single response
+          responses = [{ question: 'Call Transcript', answer: parsed }];
+        }
+      }
+    } catch (error) {
+      console.log('Could not parse responsesCollected:', error);
+    }
 
     // Header
     doc.fontSize(24)
@@ -131,11 +145,11 @@ export class PdfService {
     doc.y = scriptY + scriptHeight + 20;
     doc.moveDown(1);
 
-    // Responses Section
+    // Call Transcript Section
     if (responses.length > 0) {
       doc.fontSize(16)
          .fillColor('#2c5aa0')
-         .text('Responses Collected', { underline: true });
+         .text('Call Transcript', { underline: true });
       
       doc.moveDown(0.5);
 

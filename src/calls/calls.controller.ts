@@ -12,6 +12,7 @@ import { Response } from 'express';
 import { CallsService } from './calls.service';
 import { CreateCallDto } from './dto/create-call.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Public } from '../auth/public.decorator';
 
 @Controller('calls')
 @UseGuards(JwtAuthGuard)
@@ -76,6 +77,7 @@ export class CallsController {
   }
 
   // Webhook endpoint for Bland.ai status updates
+  @Public()
   @Post('webhook')
   async handleWebhook(@Body() webhookData: any) {
     console.log('🎯 ===== WEBHOOK RECEIVED =====');
@@ -86,25 +88,36 @@ export class CallsController {
     const { 
       call_id, 
       status, 
-      responses, 
-      duration, 
+      transcripts, 
+      call_length, 
       recording_url,
-      issues,
+      error_message,
       transferred_to,
-      from_number,
-      to_number
+      from,
+      to,
+      summary,
+      analysis,
+      variables,
+      answered_by,
+      call_ended_by,
+      concatenated_transcript
     } = webhookData;
     
     console.log('🔍 Extracted Data:');
     console.log('📞 Call ID:', call_id);
     console.log('📊 Status:', status);
-    console.log('⏱️ Duration:', duration);
+    console.log('⏱️ Call Length:', call_length);
     console.log('🎵 Recording URL:', recording_url);
-    console.log('⚠️ Issues:', issues);
+    console.log('⚠️ Error Message:', error_message);
     console.log('🔄 Transferred To:', transferred_to);
-    console.log('📱 From Number:', from_number);
-    console.log('📱 To Number:', to_number);
-    console.log('💬 Responses:', responses ? JSON.stringify(responses, null, 2) : 'None');
+    console.log('📱 From Number:', from);
+    console.log('📱 To Number:', to);
+    console.log('📝 Summary:', summary);
+    console.log('🔍 Analysis:', analysis);
+    console.log('👤 Answered By:', answered_by);
+    console.log('🔚 Call Ended By:', call_ended_by);
+    console.log('💬 Transcripts:', transcripts ? JSON.stringify(transcripts, null, 2) : 'None');
+    console.log('📄 Concatenated Transcript:', concatenated_transcript);
     
     let callStatus;
     switch (status) {
@@ -125,10 +138,10 @@ export class CallsController {
       await this.callsService.updateCallStatus(
         call_id,
         callStatus as any,
-        responses ? JSON.stringify(responses) : undefined,
-        duration,
+        concatenated_transcript || (transcripts ? JSON.stringify(transcripts) : undefined),
+        call_length,
         recording_url,
-        issues,
+        error_message,
         transferred_to,
       );
 
