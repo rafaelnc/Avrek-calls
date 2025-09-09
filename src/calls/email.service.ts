@@ -16,13 +16,17 @@ export class EmailService {
     console.log('📧 ADMIN_EMAIL:', process.env.ADMIN_EMAIL || 'NOT SET');
     
     this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      host: process.env.SMTP_HOST || 'mail.avanz.com.br',
       port: parseInt(process.env.SMTP_PORT || '587'),
       secure: false,
       auth: {
         user: process.env.SMTP_USER || 'rafaelcastro@avanz.com.br',
         pass: process.env.SMTP_PASS || 'rc@@2023@@avz',
       },
+      // Add timeout settings
+      connectionTimeout: 60000, // 60 seconds
+      greetingTimeout: 30000,   // 30 seconds
+      socketTimeout: 60000,     // 60 seconds
     });
     
     console.log('📧 EmailService - SMTP transporter created successfully');

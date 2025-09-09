@@ -84,8 +84,10 @@ export class CallsController {
     console.log('🎯 ===== WEBHOOK RECEIVED =====');
     console.log('📞 Bland.ai Webhook Received:');
     console.log('🕐 Timestamp:', new Date().toISOString());
-    console.log('📋 Webhook Data:', JSON.stringify(webhookData, null, 2));
+    console.log('📋 Full Webhook Payload:');
+    console.log(JSON.stringify(webhookData, null, 2));
     console.log('📋 Available fields:', Object.keys(webhookData));
+    console.log('📋 Payload size:', JSON.stringify(webhookData).length, 'characters');
 
     const { 
       call_id, 
@@ -107,7 +109,7 @@ export class CallsController {
       queue_status
     } = webhookData;
     
-    console.log('🔍 Extracted Data:');
+    console.log('🔍 ===== EXTRACTED DATA =====');
     console.log('📞 Call ID:', call_id);
     console.log('📊 Status:', status);
     console.log('✅ Completed:', completed);
@@ -122,8 +124,13 @@ export class CallsController {
     console.log('🔍 Analysis:', analysis);
     console.log('👤 Answered By:', answered_by);
     console.log('🔚 Call Ended By:', call_ended_by);
+    console.log('💬 Transcripts Type:', typeof transcripts);
+    console.log('💬 Transcripts Length:', transcripts ? transcripts.length : 'None');
     console.log('💬 Transcripts:', transcripts ? JSON.stringify(transcripts, null, 2) : 'None');
-    console.log('📄 Concatenated Transcript:', concatenated_transcript);
+    console.log('📄 Concatenated Transcript Type:', typeof concatenated_transcript);
+    console.log('📄 Concatenated Transcript Length:', concatenated_transcript ? concatenated_transcript.length : 'None');
+    console.log('📄 Concatenated Transcript Preview:', concatenated_transcript ? concatenated_transcript.substring(0, 200) + '...' : 'None');
+    console.log('🔍 Variables:', variables ? JSON.stringify(variables, null, 2) : 'None');
     
     let callStatus;
     
@@ -179,6 +186,14 @@ export class CallsController {
     try {
       console.log('🔄 ===== BACKGROUND PROCESSING STARTED =====');
       console.log('🔄 Call ID:', call_id);
+      console.log('🔄 Status:', status);
+      console.log('🔄 Responses Type:', typeof responses);
+      console.log('🔄 Responses Length:', responses ? responses.length : 'None');
+      console.log('🔄 Responses Preview:', responses ? responses.substring(0, 200) + '...' : 'None');
+      console.log('🔄 Duration:', duration);
+      console.log('🔄 Recording URL:', recording_url);
+      console.log('🔄 Issues:', issues);
+      console.log('🔄 Transferred To:', transferred_to);
       console.log('🔄 Timestamp:', new Date().toISOString());
       
       await this.callsService.updateCallStatus(
@@ -193,6 +208,7 @@ export class CallsController {
 
       console.log('✅ ===== BACKGROUND PROCESSING COMPLETED =====');
       console.log('✅ Call ID:', call_id);
+      console.log('✅ Status Updated:', status);
       console.log('✅ Timestamp:', new Date().toISOString());
     } catch (error) {
       console.error('❌ ===== BACKGROUND PROCESSING ERROR =====');
