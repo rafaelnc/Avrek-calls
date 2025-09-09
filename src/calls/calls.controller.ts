@@ -84,6 +84,7 @@ export class CallsController {
     console.log('📞 Bland.ai Webhook Received:');
     console.log('🕐 Timestamp:', new Date().toISOString());
     console.log('📋 Webhook Data:', JSON.stringify(webhookData, null, 2));
+    console.log('📋 Available fields:', Object.keys(webhookData));
 
     const { 
       call_id, 
@@ -100,12 +101,16 @@ export class CallsController {
       variables,
       answered_by,
       call_ended_by,
-      concatenated_transcript
+      concatenated_transcript,
+      completed,
+      queue_status
     } = webhookData;
     
     console.log('🔍 Extracted Data:');
     console.log('📞 Call ID:', call_id);
     console.log('📊 Status:', status);
+    console.log('✅ Completed:', completed);
+    console.log('📊 Queue Status:', queue_status);
     console.log('⏱️ Call Length:', call_length);
     console.log('🎵 Recording URL:', recording_url);
     console.log('⚠️ Error Message:', error_message);
@@ -120,15 +125,14 @@ export class CallsController {
     console.log('📄 Concatenated Transcript:', concatenated_transcript);
     
     let callStatus;
-    switch (status) {
-      case 'completed':
-        callStatus = 'Completed';
-        break;
-      case 'no-answer':
-        callStatus = 'Not Answered';
-        break;
-      default:
-        callStatus = 'In Progress';
+    
+    // Determine status based on multiple fields
+    if (completed === true || status === 'completed' || queue_status === 'complete') {
+      callStatus = 'Completed';
+    } else if (status === 'no-answer' || answered_by === 'no-answer') {
+      callStatus = 'Not Answered';
+    } else {
+      callStatus = 'In Progress';
     }
 
     console.log('🔄 Mapped Status:', callStatus);
