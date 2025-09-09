@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { Call } from './entities/call.entity';
 
 @Injectable()
 export class EmailService {
   private transporter;
+  private resend: Resend;
 
   constructor() {
     // Configure email transporter
@@ -64,6 +66,13 @@ export class EmailService {
     }
     
     console.log('📧 EmailService - SMTP transporter created successfully');
+    
+    // Initialize Resend if API key is provided
+    const resendApiKey = process.env.RESEND_API_KEY || 're_XqxwHGwy_PfwyjEBTPfQSz1YfiR1iZCwf';
+    if (resendApiKey) {
+      this.resend = new Resend(resendApiKey);
+      console.log('📧 Resend initialized successfully');
+    }
   }
 
   async sendCallReport(call: Call, pdfBuffer: Buffer): Promise<void> {
@@ -73,6 +82,18 @@ export class EmailService {
       console.log('📧 Phone Number:', call.phoneNumber);
       console.log('📧 Status:', call.status);
       console.log('📧 Timestamp:', new Date().toISOString());
+      
+      // Check if we should use Resend instead of SMTP
+      const useResend = process.env.USE_RESEND === 'true' || process.env.NODE_ENV === 'production';
+      console.log('📧 Use Resend:', useResend);
+      
+      if (useResend && this.resend) {
+        console.log('📧 Using Resend API for email sending...');
+        await this.sendWithResend(call, pdfBuffer);
+        return;
+      }
+      
+      console.log('📧 Using SMTP for email sending...');
 
       const mailOptions = {
         from: process.env.SMTP_FROM || 'rafaelcastro@avanz.com.br',
@@ -166,6 +187,43 @@ export class EmailService {
       console.error('❌ Stack:', error.stack);
       console.error('❌ Timestamp:', new Date().toISOString());
       // Don't throw error to avoid breaking the call flow
+    }
+  }
+
+  private async sendWithResend(call: Call, pdfBuffer: Buffer): Promise<void> {
+    try {
+      console.log('📧 ===== RESEND EMAIL SENDING =====');
+      console.log('📧 Call ID:', call.id);
+      console.log('📧 Phone Number:', call.phoneNumber);
+      
+      const result = await this.resend.emails.send({
+        from: process.env.SMTP_FROM || 'rafaelcastro@avanz.com.br',
+        to: process.env.ADMIN_EMAIL || 'rafaelnunes.ti@gmail.com',
+        subject: `Call Report - ${call.phoneNumber} - ${call.createdAt.toLocaleDateString()}`,
+        html: `
+          <h2>Call Report Generated</h2>
+          <p>A new call report has been generated for the call made to <strong>${call.phoneNumber}</strong>.</p>
+          <p><strong>Date:</strong> ${call.createdAt.toLocaleString()}</p>
+          <p><strong>Status:</strong> ${call.status}</p>
+          ${call.callDuration ? `<p><strong>Duration:</strong> ${Math.floor(call.callDuration / 60)}:${(call.callDuration % 60).toString().padStart(2, '0')}</p>` : ''}
+          <p>Please find the detailed report attached as a PDF.</p>
+        `,
+        attachments: [
+          {
+            filename: `call-report-${call.phoneNumber}-${call.createdAt.toISOString().split('T')[0]}.pdf`,
+            content: pdfBuffer,
+          },
+        ],
+      });
+      
+      console.log('✅ Resend email sent successfully!');
+      console.log('✅ Message ID:', result.data?.id);
+      console.log('✅ Response:', result);
+      
+    } catch (error) {
+      console.error('❌ Resend email failed:', error.message);
+      console.error('❌ Resend error:', error);
+      throw error;
     }
   }
 }
