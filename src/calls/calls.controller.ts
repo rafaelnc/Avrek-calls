@@ -78,7 +78,9 @@ export class CallsController {
   // Webhook endpoint for Bland.ai status updates
   @Post('webhook')
   async handleWebhook(@Body() webhookData: any) {
+    console.log('🎯 ===== WEBHOOK RECEIVED =====');
     console.log('📞 Bland.ai Webhook Received:');
+    console.log('🕐 Timestamp:', new Date().toISOString());
     console.log('📋 Webhook Data:', JSON.stringify(webhookData, null, 2));
 
     const { 
@@ -119,6 +121,7 @@ export class CallsController {
     console.log('🔄 Mapped Status:', callStatus);
 
     try {
+      console.log('🔄 Processing webhook data...');
       await this.callsService.updateCallStatus(
         call_id,
         callStatus as any,
@@ -129,10 +132,17 @@ export class CallsController {
         transferred_to,
       );
 
-      console.log('✅ Webhook processed successfully');
+      console.log('✅ ===== WEBHOOK PROCESSED SUCCESSFULLY =====');
+      console.log('✅ Call ID:', call_id);
+      console.log('✅ Status updated to:', callStatus);
+      console.log('✅ Timestamp:', new Date().toISOString());
       return { success: true };
     } catch (error) {
-      console.error('❌ Webhook processing error:', error);
+      console.error('❌ ===== WEBHOOK PROCESSING ERROR =====');
+      console.error('❌ Call ID:', call_id);
+      console.error('❌ Error:', error.message);
+      console.error('❌ Stack:', error.stack);
+      console.error('❌ Timestamp:', new Date().toISOString());
       throw error;
     }
   }

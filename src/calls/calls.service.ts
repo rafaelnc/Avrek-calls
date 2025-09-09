@@ -169,17 +169,30 @@ export class CallsService {
 
       // If call is completed, generate and send PDF
       if (status === CallStatus.COMPLETED) {
+        console.log('📧 Call completed, generating and sending PDF...');
+        console.log('📧 Call ID:', call.id);
+        console.log('📧 Bland Call ID:', call.blandCallId);
         await this.generateAndSendPdf(call.id);
+        console.log('📧 PDF generation and email sending completed for call:', call.id);
       }
     }
   }
 
   async generateAndSendPdf(callId: number): Promise<void> {
+    console.log('📄 ===== PDF GENERATION STARTED =====');
+    console.log('📄 Call ID:', callId);
+    console.log('📄 Timestamp:', new Date().toISOString());
+    
     const call = await this.findOne(callId);
+    console.log('📄 Call found:', call.phoneNumber, '- Status:', call.status);
+    
     const pdfBuffer = await this.pdfService.generateCallReport(call);
+    console.log('📄 PDF generated successfully, size:', pdfBuffer.length, 'bytes');
     
     // Send email with PDF attachment
+    console.log('📧 Starting email sending process...');
     await this.emailService.sendCallReport(call, pdfBuffer);
+    console.log('📄 ===== PDF GENERATION COMPLETED =====');
   }
 
   async downloadPdf(callId: number): Promise<Buffer> {

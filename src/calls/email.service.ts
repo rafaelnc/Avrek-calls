@@ -22,6 +22,12 @@ export class EmailService {
 
   async sendCallReport(call: Call, pdfBuffer: Buffer): Promise<void> {
     try {
+      console.log('📧 ===== EMAIL SENDING STARTED =====');
+      console.log('📧 Call ID:', call.id);
+      console.log('📧 Phone Number:', call.phoneNumber);
+      console.log('📧 Status:', call.status);
+      console.log('📧 Timestamp:', new Date().toISOString());
+
       const mailOptions = {
         from: process.env.SMTP_FROM || 'noreply@avrek.com',
         to: process.env.ADMIN_EMAIL || 'admin@avrek.com',
@@ -43,10 +49,25 @@ export class EmailService {
         ],
       };
 
+      console.log('📧 Email Configuration:');
+      console.log('📧 From:', mailOptions.from);
+      console.log('📧 To:', mailOptions.to);
+      console.log('📧 Subject:', mailOptions.subject);
+      console.log('📧 Attachment:', mailOptions.attachments[0].filename);
+      console.log('📧 PDF Size:', pdfBuffer.length, 'bytes');
+
       await this.transporter.sendMail(mailOptions);
-      console.log(`Call report email sent for call ${call.id}`);
+      
+      console.log('✅ ===== EMAIL SENT SUCCESSFULLY =====');
+      console.log('✅ Call ID:', call.id);
+      console.log('✅ Email sent to:', mailOptions.to);
+      console.log('✅ Timestamp:', new Date().toISOString());
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('❌ ===== EMAIL SENDING FAILED =====');
+      console.error('❌ Call ID:', call.id);
+      console.error('❌ Error:', error.message);
+      console.error('❌ Stack:', error.stack);
+      console.error('❌ Timestamp:', new Date().toISOString());
       // Don't throw error to avoid breaking the call flow
     }
   }
