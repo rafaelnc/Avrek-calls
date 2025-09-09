@@ -19,22 +19,49 @@ export class EmailService {
     console.log('📧 ADMIN_EMAIL:', process.env.ADMIN_EMAIL || 'NOT SET');
     console.log('📧 All env vars:', Object.keys(process.env).filter(key => key.startsWith('SMTP')));
     
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'mail.avanz.com.br',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER || 'rafaelcastro@avanz.com.br',
-        pass: process.env.SMTP_PASS || 'rc@@2023@@avz',
-      },
-      // Add timeout settings
-      connectionTimeout: 60000, // 60 seconds
-      greetingTimeout: 30000,   // 30 seconds
-      socketTimeout: 60000,     // 60 seconds
-      // Add debug info for troubleshooting
-      debug: true,
-      logger: true,
-    });
+    // Check if running on Railway
+    const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID;
+    console.log('📧 Running on Railway:', !!isRailway);
+    
+    if (isRailway) {
+      console.log('📧 Using Railway-optimized SMTP configuration...');
+      // Railway-optimized configuration with shorter timeouts
+      this.transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'mail.avanz.com.br',
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: false,
+        auth: {
+          user: process.env.SMTP_USER || 'rafaelcastro@avanz.com.br',
+          pass: process.env.SMTP_PASS || 'rc@@2023@@avz',
+        },
+        // Shorter timeouts for Railway
+        connectionTimeout: 30000, // 30 seconds
+        greetingTimeout: 15000,   // 15 seconds
+        socketTimeout: 30000,     // 30 seconds
+        // Add debug info for troubleshooting
+        debug: true,
+        logger: true,
+      } as any);
+    } else {
+      console.log('📧 Using standard SMTP configuration...');
+      // Standard configuration for local development
+      this.transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'mail.avanz.com.br',
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: false,
+        auth: {
+          user: process.env.SMTP_USER || 'rafaelcastro@avanz.com.br',
+          pass: process.env.SMTP_PASS || 'rc@@2023@@avz',
+        },
+        // Standard timeout settings
+        connectionTimeout: 60000, // 60 seconds
+        greetingTimeout: 30000,   // 30 seconds
+        socketTimeout: 60000,     // 60 seconds
+        // Add debug info for troubleshooting
+        debug: true,
+        logger: true,
+      } as any);
+    }
     
     console.log('📧 EmailService - SMTP transporter created successfully');
   }
@@ -77,8 +104,49 @@ export class EmailService {
 
       // Verify SMTP connection before sending
       console.log('📧 Verifying SMTP connection...');
-      await this.transporter.verify();
-      console.log('📧 SMTP connection verified successfully');
+      console.log('📧 Railway Environment Check:');
+      console.log('📧 NODE_ENV:', process.env.NODE_ENV);
+      console.log('📧 RAILWAY_ENVIRONMENT:', process.env.RAILWAY_ENVIRONMENT);
+      console.log('📧 RAILWAY_PROJECT_ID:', process.env.RAILWAY_PROJECT_ID);
+      console.log('📧 RAILWAY_SERVICE_ID:', process.env.RAILWAY_SERVICE_ID);
+      
+      try {
+        await this.transporter.verify();
+        console.log('📧 SMTP connection verified successfully');
+      } catch (verifyError) {
+        console.error('❌ SMTP verification failed:', verifyError.message);
+        console.error('❌ Verify error code:', verifyError.code);
+        console.error('❌ Verify error command:', verifyError.command);
+        
+        // Try alternative configuration for Railway
+        const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID;
+        if (isRailway) {
+          console.log('🔄 Trying alternative SMTP configuration for Railway...');
+          try {
+            const altTransporter = nodemailer.createTransport({
+              host: process.env.SMTP_HOST || 'mail.avanz.com.br',
+              port: 465, // Try SSL port
+              secure: true,
+              auth: {
+                user: process.env.SMTP_USER || 'rafaelcastro@avanz.com.br',
+                pass: process.env.SMTP_PASS || 'rc@@2023@@avz',
+              },
+              connectionTimeout: 20000,
+              greetingTimeout: 10000,
+              socketTimeout: 20000,
+            } as any);
+            
+            await altTransporter.verify();
+            console.log('✅ Alternative SMTP configuration works!');
+            this.transporter = altTransporter;
+          } catch (altError) {
+            console.error('❌ Alternative configuration also failed:', altError.message);
+            throw verifyError; // Throw original error
+          }
+        } else {
+          throw verifyError;
+        }
+      }
 
       // Send email
       console.log('📧 Sending email...');
