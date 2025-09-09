@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import PDFDocument from 'pdfkit';
+import * as PDFDocument from 'pdfkit';
 import { Call } from './entities/call.entity';
 
 @Injectable()

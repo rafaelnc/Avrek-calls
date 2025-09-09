@@ -49,7 +49,8 @@ export class BlandAiService {
       endpoint: callData.endpoint || 'https://api.bland.ai',
       voicemail_action: callData.voicemail_action || 'hangup',
       task: callData.task,
-      webhook_url: callData.webhook || `${process.env.BASE_URL || 'http://localhost:3001'}/calls/webhook`,
+      webhook: callData.webhook || `${process.env.BASE_URL || 'http://localhost:3001'}/calls/webhook`,
+      webhook_events: ['call', 'error'],
     };
 
     const requestHeaders = {

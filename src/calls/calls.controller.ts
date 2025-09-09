@@ -135,7 +135,9 @@ export class CallsController {
 
     try {
       console.log('🔄 Processing webhook data...');
-      await this.callsService.updateCallStatus(
+      
+      // Process webhook in background to avoid blocking the response
+      this.processWebhookInBackground(
         call_id,
         callStatus as any,
         concatenated_transcript || (transcripts ? JSON.stringify(transcripts) : undefined),
@@ -145,18 +147,55 @@ export class CallsController {
         transferred_to,
       );
 
-      console.log('✅ ===== WEBHOOK PROCESSED SUCCESSFULLY =====');
+      console.log('✅ ===== WEBHOOK ACCEPTED =====');
       console.log('✅ Call ID:', call_id);
-      console.log('✅ Status updated to:', callStatus);
+      console.log('✅ Status to process:', callStatus);
       console.log('✅ Timestamp:', new Date().toISOString());
-      return { success: true };
+      return { success: true, message: 'Webhook received and queued for processing' };
     } catch (error) {
-      console.error('❌ ===== WEBHOOK PROCESSING ERROR =====');
+      console.error('❌ ===== WEBHOOK ACCEPTANCE ERROR =====');
+      console.error('❌ Call ID:', call_id);
+      console.error('❌ Error:', error.message);
+      console.error('❌ Timestamp:', new Date().toISOString());
+      // Still return success to avoid webhook retries
+      return { success: true, message: 'Webhook received but processing failed', error: error.message };
+    }
+  }
+
+  private async processWebhookInBackground(
+    call_id: string,
+    status: any,
+    responses?: string,
+    duration?: number,
+    recording_url?: string,
+    issues?: string,
+    transferred_to?: string,
+  ): Promise<void> {
+    try {
+      console.log('🔄 ===== BACKGROUND PROCESSING STARTED =====');
+      console.log('🔄 Call ID:', call_id);
+      console.log('🔄 Timestamp:', new Date().toISOString());
+      
+      await this.callsService.updateCallStatus(
+        call_id,
+        status,
+        responses,
+        duration,
+        recording_url,
+        issues,
+        transferred_to,
+      );
+
+      console.log('✅ ===== BACKGROUND PROCESSING COMPLETED =====');
+      console.log('✅ Call ID:', call_id);
+      console.log('✅ Timestamp:', new Date().toISOString());
+    } catch (error) {
+      console.error('❌ ===== BACKGROUND PROCESSING ERROR =====');
       console.error('❌ Call ID:', call_id);
       console.error('❌ Error:', error.message);
       console.error('❌ Stack:', error.stack);
       console.error('❌ Timestamp:', new Date().toISOString());
-      throw error;
+      // Don't throw error - this is background processing
     }
   }
 }
