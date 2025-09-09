@@ -1,0 +1,12 @@
+# Copy these lines to your .env file to replace the email configuration:
+
+# Email Configuration - Updated
+SMTP_HOST=mail.avanz.com.br
+SMTP_PORT=587
+SMTP_USER=rafaelcastro@avanz.com.br
+SMTP_PASS=rc@@2023@@avz
+SMTP_FROM=rafaelcastro@avanz.com.br
+ADMIN_EMAIL=rafaelnunes.ti@gmail.com
+
+# Replace the old email configuration section in your .env file with the above lines
+

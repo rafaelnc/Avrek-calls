@@ -8,7 +8,13 @@ export class EmailService {
 
   constructor() {
     // Configure email transporter
-    // In production, use proper SMTP configuration
+    console.log('📧 EmailService - Initializing SMTP configuration...');
+    console.log('📧 SMTP_HOST:', process.env.SMTP_HOST || 'NOT SET');
+    console.log('📧 SMTP_PORT:', process.env.SMTP_PORT || 'NOT SET');
+    console.log('📧 SMTP_USER:', process.env.SMTP_USER || 'NOT SET');
+    console.log('📧 SMTP_FROM:', process.env.SMTP_FROM || 'NOT SET');
+    console.log('📧 ADMIN_EMAIL:', process.env.ADMIN_EMAIL || 'NOT SET');
+    
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '587'),
@@ -18,6 +24,8 @@ export class EmailService {
         pass: process.env.SMTP_PASS || 'your-app-password',
       },
     });
+    
+    console.log('📧 EmailService - SMTP transporter created successfully');
   }
 
   async sendCallReport(call: Call, pdfBuffer: Buffer): Promise<void> {
@@ -56,7 +64,17 @@ export class EmailService {
       console.log('📧 Attachment:', mailOptions.attachments[0].filename);
       console.log('📧 PDF Size:', pdfBuffer.length, 'bytes');
 
-      await this.transporter.sendMail(mailOptions);
+      // Verify SMTP connection before sending
+      console.log('📧 Verifying SMTP connection...');
+      await this.transporter.verify();
+      console.log('📧 SMTP connection verified successfully');
+
+      // Send email
+      console.log('📧 Sending email...');
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log('📧 Email sent successfully!');
+      console.log('📧 Message ID:', info.messageId);
+      console.log('📧 Response:', info.response);
       
       console.log('✅ ===== EMAIL SENT SUCCESSFULLY =====');
       console.log('✅ Call ID:', call.id);
