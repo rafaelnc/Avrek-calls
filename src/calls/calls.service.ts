@@ -216,8 +216,39 @@ export class CallsService {
       }
     } else {
       console.log('❌ Call not found in database with Bland Call ID:', blandCallId);
-      console.log('❌ This might be a call that was not created through our system');
-      console.log('❌ Consider using sync to import this call');
+      console.log('🔄 Creating new call record from webhook data...');
+      
+      // Create new call record from webhook data
+      const newCall = this.callsRepository.create({
+        phoneNumber: phoneNumber || 'Unknown',
+        fromNumber: 'System',
+        baseScript: 'Call imported from webhook',
+        status: status,
+        blandCallId: blandCallId,
+        responsesCollected: responses,
+        callDuration: duration,
+        recordingUrl: recordingUrl,
+        issues: issues,
+        transferredTo: transferredTo,
+        summary: summary,
+        pathway: 'webhook-import',
+        reviewStatus: 'pending',
+      });
+
+      const savedCall = await this.callsRepository.save(newCall);
+      console.log('✅ New call created from webhook:', savedCall.id);
+      console.log('✅ Phone number:', savedCall.phoneNumber);
+      console.log('✅ Status:', savedCall.status);
+      console.log('✅ Bland Call ID:', savedCall.blandCallId);
+
+      // If call is completed, generate and send PDF
+      if (status === CallStatus.COMPLETED) {
+        console.log('📧 Call completed, generating and sending PDF...');
+        console.log('📧 Call ID:', savedCall.id);
+        console.log('📧 Bland Call ID:', savedCall.blandCallId);
+        await this.generateAndSendPdf(savedCall.id);
+        console.log('📧 PDF generation and email sending completed for call:', savedCall.id);
+      }
     }
   }
 
