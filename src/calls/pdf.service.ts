@@ -14,8 +14,8 @@ export class PdfService {
             bottom: 50,
             left: 50,
             right: 50,
-        },
-      });
+          },
+        });
 
         const buffers: Buffer[] = [];
         doc.on('data', buffers.push.bind(buffers));
@@ -34,33 +34,38 @@ export class PdfService {
   }
 
   private generatePdfContent(doc: PDFDocument, call: Call): void {
-    // Try to parse responses/transcripts from webhook data
-    let responses = [];
+    // Parse transcripts from responsesCollected
     let transcripts = [];
     
     try {
       if (call.responsesCollected) {
-        // First, try to parse as JSON
         try {
           const parsed = JSON.parse(call.responsesCollected);
           if (Array.isArray(parsed)) {
-            responses = parsed;
+            transcripts = parsed;
           } else if (typeof parsed === 'string') {
-            // If it's a concatenated transcript, treat as single response
-            responses = [{ question: 'Call Transcript', answer: parsed }];
+            // If it's a concatenated transcript, split by lines
+            const lines = parsed.split('\n').filter(line => line.trim());
+            transcripts = lines.map((line, index) => ({
+              id: index,
+              user: line.includes(':') ? line.split(':')[0].trim() : 'unknown',
+              text: line.includes(':') ? line.split(':').slice(1).join(':').trim() : line.trim(),
+              created_at: new Date().toISOString()
+            }));
           }
         } catch (jsonError) {
           // If JSON parsing fails, treat as concatenated transcript string
-          console.log('Not valid JSON, treating as concatenated transcript');
-          responses = [{ question: 'Call Transcript', answer: call.responsesCollected }];
+          const lines = call.responsesCollected.split('\n').filter(line => line.trim());
+          transcripts = lines.map((line, index) => ({
+            id: index,
+            user: line.includes(':') ? line.split(':')[0].trim() : 'unknown',
+            text: line.includes(':') ? line.split(':').slice(1).join(':').trim() : line.trim(),
+            created_at: new Date().toISOString()
+          }));
         }
       }
     } catch (error) {
       console.log('Could not parse responsesCollected:', error);
-      // Fallback: treat as plain text
-      if (call.responsesCollected) {
-        responses = [{ question: 'Call Transcript', answer: call.responsesCollected }];
-      }
     }
 
     // Header
@@ -82,154 +87,215 @@ export class PdfService {
        .lineTo(doc.page.width - 50, doc.y)
        .stroke();
     
-    doc.moveDown(1);
+    doc.moveDown(1.5);
 
     // Call Information Section
-    doc.fontSize(16)
-       .fillColor('#2c5aa0')
-       .text('Call Information', { underline: true });
-    
-    doc.moveDown(0.5);
-    
-    // Call details
-    const callInfo = [
-      ['Phone Number:', call.phoneNumber],
-      ['Date/Time:', new Date(call.createdAt).toLocaleString()],
-      ['Status:', call.status],
-    ];
+    this.addSection(doc, 'Call Information', [
+      { label: 'Phone Number', value: call.phoneNumber || 'Unknown' },
+      { label: 'Date/Time', value: new Date(call.createdAt).toLocaleString() },
+      { label: 'Status', value: call.status || 'Unknown' },
+      { label: 'From Number', value: call.fromNumber || 'System' },
+      { label: 'Pathway', value: call.pathway || 'Unknown' },
+    ]);
 
+    // Call Details Section
+    const details = [];
     if (call.callDuration) {
       const minutes = Math.floor(call.callDuration / 60);
-      const seconds = call.callDuration % 60;
-      callInfo.push(['Duration:', `${minutes}:${seconds.toString().padStart(2, '0')}`]);
+      const seconds = Math.floor(call.callDuration % 60);
+      details.push({ label: 'Duration', value: `${minutes}:${seconds.toString().padStart(2, '0')}` });
+    }
+    if (call.recordingUrl) {
+      details.push({ label: 'Recording', value: 'Available' });
+    }
+    if (details.length > 0) {
+      this.addSection(doc, 'Call Details', details);
     }
 
-    callInfo.forEach(([label, value]) => {
-      doc.fontSize(12)
-         .fillColor('#2c5aa0')
-         .text(label, { continued: true })
-         .fillColor('#333')
-         .text(` ${value}`);
-      doc.moveDown(0.3);
-    });
+    // Summary Section
+    if (call.summary && call.summary.trim()) {
+      this.addTextSection(doc, 'Call Summary', call.summary);
+    }
 
-    doc.moveDown(1);
+    // Issues Section
+    if (call.issues && call.issues.trim()) {
+      this.addTextSection(doc, 'Issues Detected', call.issues);
+    }
 
-    // Base Script Section
-    doc.fontSize(16)
-       .fillColor('#2c5aa0')
-       .text('Base Script', { underline: true });
-    
-    doc.moveDown(0.5);
-    
-    // Add background for script
-    const scriptY = doc.y;
-    doc.rect(50, scriptY - 10, doc.page.width - 100, 100)
-       .fillColor('#f8f9fa')
-       .fill();
-    
-    doc.fillColor('#333')
-       .fontSize(10)
-       .text(call.baseScript, 60, scriptY, {
-         width: doc.page.width - 120,
-         align: 'left'
-       });
-
-    // Calculate actual height used by script
-    const scriptHeight = doc.heightOfString(call.baseScript, {
-      width: doc.page.width - 120
-    });
-    
-    // Redraw background with correct height
-    doc.rect(50, scriptY - 10, doc.page.width - 100, scriptHeight + 20)
-       .fillColor('#f8f9fa')
-       .fill();
-    
-    // Redraw text
-    doc.fillColor('#333')
-       .fontSize(10)
-       .text(call.baseScript, 60, scriptY, {
-         width: doc.page.width - 120,
-         align: 'left'
-       });
-
-    doc.y = scriptY + scriptHeight + 20;
-    doc.moveDown(1);
-
-    // Call Transcript Section
-    if (responses.length > 0) {
-      doc.fontSize(16)
-         .fillColor('#2c5aa0')
-         .text('Call Transcript', { underline: true });
-      
-      doc.moveDown(0.5);
-
-      responses.forEach((response: any, index: number) => {
-        const responseY = doc.y;
-        const question = response.question || 'Response';
-        const answer = response.answer || response;
-
-        // Response background
-        doc.rect(50, responseY - 10, doc.page.width - 100, 60)
-           .fillColor('#f8f9fa')
-           .fill();
-
-        // Question
-        doc.fillColor('#2c5aa0')
-           .fontSize(12)
-           .text(question, 60, responseY, {
-             width: doc.page.width - 120,
-             align: 'left'
-           });
-
-        // Answer
-        doc.fillColor('#333')
-           .fontSize(10)
-           .text(answer, 60, responseY + 20, {
-             width: doc.page.width - 120,
-             align: 'left'
-           });
-
-        // Calculate actual height
-        const questionHeight = doc.heightOfString(question, {
-          width: doc.page.width - 120
-        });
-        const answerHeight = doc.heightOfString(answer, {
-          width: doc.page.width - 120
-        });
-        const totalHeight = Math.max(60, questionHeight + answerHeight + 30);
-
-        // Redraw background with correct height
-        doc.rect(50, responseY - 10, doc.page.width - 100, totalHeight)
-           .fillColor('#f8f9fa')
-           .fill();
-
-        // Redraw content
-        doc.fillColor('#2c5aa0')
-           .fontSize(12)
-           .text(question, 60, responseY, {
-             width: doc.page.width - 120,
-             align: 'left'
-           });
-
-        doc.fillColor('#333')
-           .fontSize(10)
-           .text(answer, 60, responseY + 20, {
-             width: doc.page.width - 120,
-             align: 'left'
-           });
-
-        doc.y = responseY + totalHeight + 10;
-        doc.moveDown(0.5);
-      });
+    // Transcript Section
+    if (transcripts && transcripts.length > 0) {
+      this.addTranscriptSection(doc, 'Call Transcript', transcripts);
     }
 
     // Footer
+    doc.moveDown(2);
     doc.fontSize(8)
        .fillColor('#666')
-       .text(`Generated on ${new Date().toLocaleString()}`, 50, doc.page.height - 30, {
-         align: 'center',
-         width: doc.page.width - 100
+       .text(`Generated on ${new Date().toLocaleString()}`, { align: 'center' });
+  }
+
+  private addSection(doc: PDFDocument, title: string, items: { label: string; value: string }[]): void {
+    // Check if we need a new page
+    const estimatedHeight = 60 + (items.length * 25);
+    if (doc.y + estimatedHeight > doc.page.height - 100) {
+      doc.addPage();
+    }
+
+    // Section title
+    doc.fontSize(16)
+       .fillColor('#2c5aa0')
+       .font('Helvetica-Bold')
+       .text(title, { underline: true });
+    
+    doc.moveDown(0.5);
+
+    // Create a table-like layout
+    const startY = doc.y;
+    const rowHeight = 25;
+    const totalHeight = items.length * rowHeight + 20;
+
+    // Background
+    doc.rect(50, startY - 10, doc.page.width - 100, totalHeight)
+       .fillColor('#f8f9fa')
+       .fill();
+
+    // Border
+    doc.rect(50, startY - 10, doc.page.width - 100, totalHeight)
+       .strokeColor('#e5e7eb')
+       .lineWidth(1)
+       .stroke();
+
+    // Items
+    items.forEach((item, index) => {
+      const y = startY + (index * rowHeight);
+      
+      // Label
+      doc.fillColor('#374151')
+         .fontSize(11)
+         .font('Helvetica-Bold')
+         .text(item.label + ':', 60, y + 5);
+
+      // Value
+      doc.fillColor('#6b7280')
+         .fontSize(11)
+         .font('Helvetica')
+         .text(item.value, 200, y + 5, {
+           width: doc.page.width - 250,
+           align: 'left'
+         });
+    });
+
+    // Update position
+    doc.y = startY + totalHeight + 10;
+    doc.moveDown(1);
+  }
+
+  private addTextSection(doc: PDFDocument, title: string, content: string): void {
+    // Check if we need a new page
+    const contentHeight = doc.heightOfString(content, {
+      width: doc.page.width - 120,
+      fontSize: 11
+    });
+    const estimatedHeight = 60 + contentHeight;
+    
+    if (doc.y + estimatedHeight > doc.page.height - 100) {
+      doc.addPage();
+    }
+
+    // Section title
+    doc.fontSize(16)
+       .fillColor('#2c5aa0')
+       .font('Helvetica-Bold')
+       .text(title, { underline: true });
+    
+    doc.moveDown(0.5);
+
+    const startY = doc.y;
+    const blockHeight = contentHeight + 30;
+
+    // Background
+    doc.rect(50, startY - 10, doc.page.width - 100, blockHeight)
+       .fillColor('#f8f9fa')
+       .fill();
+
+    // Border
+    doc.rect(50, startY - 10, doc.page.width - 100, blockHeight)
+       .strokeColor('#e5e7eb')
+       .lineWidth(1)
+       .stroke();
+
+    // Content
+    doc.fillColor('#374151')
+       .fontSize(11)
+       .font('Helvetica')
+       .text(content, 60, startY + 5, {
+         width: doc.page.width - 120,
+         align: 'left'
        });
+
+    // Update position
+    doc.y = startY + blockHeight + 10;
+    doc.moveDown(1);
+  }
+
+  private addTranscriptSection(doc: PDFDocument, title: string, transcripts: any[]): void {
+    // Force new page for transcript section
+    doc.addPage();
+    
+    // Section title
+    doc.fontSize(16)
+       .fillColor('#2c5aa0')
+       .font('Helvetica-Bold')
+       .text(title, { underline: true });
+    
+    doc.moveDown(0.5);
+
+    transcripts.forEach((transcript, index) => {
+      // Check if we need a new page for this transcript entry
+      const contentHeight = doc.heightOfString(transcript.text || 'No text', {
+        width: doc.page.width - 120,
+        fontSize: 10
+      });
+      const estimatedHeight = 40 + contentHeight;
+      
+      if (doc.y + estimatedHeight > doc.page.height - 100) {
+        doc.addPage();
+      }
+
+      const startY = doc.y;
+      const blockHeight = contentHeight + 30;
+
+      // Background
+      doc.rect(50, startY - 5, doc.page.width - 100, blockHeight)
+         .fillColor('#f8f9fa')
+         .fill();
+
+      // Border
+      doc.rect(50, startY - 5, doc.page.width - 100, blockHeight)
+         .strokeColor('#e5e7eb')
+         .lineWidth(1)
+         .stroke();
+
+      // User label with color
+      const userColor = transcript.user === 'user' ? '#3b82f6' : '#10b981';
+      doc.fillColor(userColor)
+         .fontSize(12)
+         .font('Helvetica-Bold')
+         .text(`${transcript.user || 'Unknown'}:`, 60, startY + 5);
+
+      // Text content
+      doc.fillColor('#374151')
+         .fontSize(10)
+         .font('Helvetica')
+         .text(transcript.text || 'No text', 60, startY + 20, {
+           width: doc.page.width - 120,
+           align: 'left'
+         });
+
+      // Update position
+      doc.y = startY + blockHeight + 5;
+    });
+
+    doc.moveDown(1);
   }
 }
