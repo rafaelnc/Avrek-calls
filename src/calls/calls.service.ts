@@ -390,19 +390,41 @@ export class CallsService {
         hasChanges = true;
       }
 
-      // Update other fields if they exist
-      if (blandCall.duration && blandCall.duration !== existingCall.callDuration) {
-        existingCall.callDuration = blandCall.duration;
+      // Update phone number if it's missing or different
+      if (blandCall.to && blandCall.to !== existingCall.phoneNumber) {
+        existingCall.phoneNumber = blandCall.to;
         hasChanges = true;
       }
 
+      // Update from number if it's missing or different
+      if (blandCall.from && blandCall.from !== existingCall.fromNumber) {
+        existingCall.fromNumber = blandCall.from;
+        hasChanges = true;
+      }
+
+      // Update duration if it exists and is different
+      const duration = blandCall.call_length || blandCall.duration;
+      if (duration && duration !== existingCall.callDuration) {
+        existingCall.callDuration = duration;
+        hasChanges = true;
+      }
+
+      // Update recording URL if it exists and is different
       if (blandCall.recording_url && blandCall.recording_url !== existingCall.recordingUrl) {
         existingCall.recordingUrl = blandCall.recording_url;
         hasChanges = true;
       }
 
-      if (blandCall.responses && JSON.stringify(blandCall.responses) !== existingCall.responsesCollected) {
-        existingCall.responsesCollected = JSON.stringify(blandCall.responses);
+      // Update responses/transcripts if they exist and are different
+      const responses = blandCall.transcripts || blandCall.responses;
+      if (responses && JSON.stringify(responses) !== existingCall.responsesCollected) {
+        existingCall.responsesCollected = JSON.stringify(responses);
+        hasChanges = true;
+      }
+
+      // Update summary if it exists and is different
+      if (blandCall.summary && blandCall.summary !== existingCall.summary) {
+        existingCall.summary = blandCall.summary;
         hasChanges = true;
       }
 
@@ -435,14 +457,15 @@ export class CallsService {
       }
 
       const newCall = this.callsRepository.create({
-        phoneNumber: blandCall.to_number || 'Unknown',
-        fromNumber: blandCall.from_number || 'System',
+        phoneNumber: blandCall.to || 'Unknown',
+        fromNumber: blandCall.from || 'System',
         baseScript: blandCall.script || 'Imported from Bland.ai',
         status: status,
         blandCallId: blandCall.call_id,
-        callDuration: blandCall.duration || null,
+        callDuration: blandCall.call_length || blandCall.duration || null,
         recordingUrl: blandCall.recording_url || null,
-        responsesCollected: blandCall.responses ? JSON.stringify(blandCall.responses) : null,
+        responsesCollected: blandCall.transcripts ? JSON.stringify(blandCall.transcripts) : (blandCall.responses ? JSON.stringify(blandCall.responses) : null),
+        summary: blandCall.summary || null,
         pathway: blandCall.model || 'base',
         reviewStatus: 'pending',
       });
