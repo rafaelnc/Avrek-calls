@@ -109,12 +109,30 @@ export class CallsService {
       
       console.log('✅ Bland.ai details retrieved successfully');
       
+      // Parse responses if available - handle both JSON and concatenated strings
+      let responses = [];
+      if (call.responsesCollected) {
+        try {
+          // Try to parse as JSON first
+          const parsed = JSON.parse(call.responsesCollected);
+          if (Array.isArray(parsed)) {
+            responses = parsed;
+          } else if (typeof parsed === 'string') {
+            // If it's a string, treat as concatenated transcript
+            responses = [{ question: 'Call Transcript', answer: parsed }];
+          }
+        } catch (jsonError) {
+          console.log('📝 Not valid JSON, treating as concatenated transcript');
+          // If JSON parsing fails, treat as concatenated transcript
+          responses = [{ question: 'Call Transcript', answer: call.responsesCollected }];
+        }
+      }
+
       // Combine local call data with Bland.ai details
       const result = {
         localCall: call,
         blandDetails: blandDetails,
-        // Parse responses if available
-        responses: call.responsesCollected ? JSON.parse(call.responsesCollected) : [],
+        responses: responses,
       };
 
       console.log('📊 Final result structure:', {
@@ -143,6 +161,8 @@ export class CallsService {
     recordingUrl?: string,
     issues?: string,
     transferredTo?: string,
+    phoneNumber?: string,
+    summary?: string,
   ): Promise<void> {
     console.log('🔍 ===== UPDATE CALL STATUS STARTED =====');
     console.log('🔍 Looking for call with Bland Call ID:', blandCallId);
@@ -171,6 +191,14 @@ export class CallsService {
       }
       if (transferredTo) {
         call.transferredTo = transferredTo;
+      }
+      if (phoneNumber) {
+        call.phoneNumber = phoneNumber;
+        console.log('✅ Phone number updated:', phoneNumber);
+      }
+      if (summary) {
+        call.summary = summary;
+        console.log('✅ Summary updated:', summary.substring(0, 100) + '...');
       }
       await this.callsRepository.save(call);
       console.log('✅ Call updated successfully in database');

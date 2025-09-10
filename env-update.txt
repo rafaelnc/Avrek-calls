@@ -10,3 +10,4 @@ ADMIN_EMAIL=rafaelnunes.ti@gmail.com
 
 # Replace the old email configuration section in your .env file with the above lines
 
+

@@ -197,7 +197,7 @@ export class EmailService {
       console.log('📧 Phone Number:', call.phoneNumber);
       
       const result = await this.resend.emails.send({
-        from: process.env.SMTP_FROM || 'rafaelcastro@avanz.com.br',
+        from: 'onboarding@resend.dev', // Usar domínio padrão do Resend
         to: process.env.ADMIN_EMAIL || 'rafaelnunes.ti@gmail.com',
         subject: `Call Report - ${call.phoneNumber} - ${call.createdAt.toLocaleDateString()}`,
         html: `

@@ -7,3 +7,4 @@ SMTP_PASS=rc@@2023@@avz
 SMTP_FROM=rafaelcastro@avanz.com.br
 ADMIN_EMAIL=rafaelnunes.ti@gmail.com
 
+

@@ -56,6 +56,9 @@ export class Call {
   @Column({ nullable: true })
   reviewStatus: string;
 
+  @Column('text', { nullable: true })
+  summary: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -149,14 +149,26 @@ export class CallsController {
       console.log('🔄 Processing webhook data...');
       
       // Process webhook in background to avoid blocking the response
+      // Save transcripts as JSON for proper parsing in getCallDetails
+      const responsesToSave = transcripts ? JSON.stringify(transcripts) : concatenated_transcript;
+      
+      console.log('📝 ===== RESPONSES PROCESSING =====');
+      console.log('📝 Has transcripts array:', !!transcripts);
+      console.log('📝 Transcripts count:', transcripts ? transcripts.length : 0);
+      console.log('📝 Has concatenated_transcript:', !!concatenated_transcript);
+      console.log('📝 Responses to save type:', typeof responsesToSave);
+      console.log('📝 Responses to save preview:', responsesToSave ? responsesToSave.substring(0, 200) + '...' : 'None');
+      
       this.processWebhookInBackground(
         call_id,
         callStatus,
-        concatenated_transcript || (transcripts ? JSON.stringify(transcripts) : undefined),
+        responsesToSave,
         call_length,
         recording_url,
         error_message,
         transferred_to,
+        to, // Add phone number from webhook
+        summary, // Add summary from webhook
       );
 
       console.log('✅ ===== WEBHOOK ACCEPTED =====');
@@ -182,6 +194,8 @@ export class CallsController {
     recording_url?: string,
     issues?: string,
     transferred_to?: string,
+    phone_number?: string,
+    summary?: string,
   ): Promise<void> {
     try {
       console.log('🔄 ===== BACKGROUND PROCESSING STARTED =====');
@@ -194,6 +208,8 @@ export class CallsController {
       console.log('🔄 Recording URL:', recording_url);
       console.log('🔄 Issues:', issues);
       console.log('🔄 Transferred To:', transferred_to);
+      console.log('🔄 Phone Number:', phone_number);
+      console.log('🔄 Summary:', summary);
       console.log('🔄 Timestamp:', new Date().toISOString());
       
       await this.callsService.updateCallStatus(
@@ -204,6 +220,8 @@ export class CallsController {
         recording_url,
         issues,
         transferred_to,
+        phone_number,
+        summary,
       );
 
       console.log('✅ ===== BACKGROUND PROCESSING COMPLETED =====');

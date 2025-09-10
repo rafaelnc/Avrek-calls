@@ -93,3 +93,4 @@ testEmailServiceConfig().then(() => {
   console.error('💥 EmailService test crashed:', error);
   process.exit(1);
 });
+
